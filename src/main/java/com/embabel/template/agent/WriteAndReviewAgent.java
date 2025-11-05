@@ -15,11 +15,9 @@
  */
 package com.embabel.template.agent;
 
-import com.embabel.agent.api.annotation.AchievesGoal;
-import com.embabel.agent.api.annotation.Action;
-import com.embabel.agent.api.annotation.Agent;
-import com.embabel.agent.api.annotation.Export;
+import com.embabel.agent.api.annotation.*;
 import com.embabel.agent.api.common.OperationContext;
+import com.embabel.agent.core.CoreToolGroups;
 import com.embabel.agent.domain.io.UserInput;
 import com.embabel.agent.domain.library.HasContent;
 import com.embabel.agent.prompt.persona.Persona;
@@ -141,13 +139,15 @@ public class WriteAndReviewAgent {
                 .withLlm(LlmOptions
                         .withAutoLlm() // You can also choose a specific model or role here
                         .withTemperature(.7)
-                )
+                ).withToolGroup(CoreToolGroups.WEB)
                 .withPromptContributor(Personas.WRITER)
                 .createObject(String.format("""
                                 Craft a short story in %d words or less.
                                 The story should be engaging and imaginative.
                                 Use the user's input as inspiration if possible.
                                 If the user has provided a name, include it in the story.
+                                
+                                Use the web tools, to find the weather in New York. Attach the weather information at the end of the story.
                                 
                                 # User input
                                 %s

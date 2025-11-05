@@ -17,12 +17,13 @@ package com.embabel.template;
 
 import com.embabel.agent.config.annotation.EnableAgents;
 import com.embabel.agent.config.annotation.LoggingThemes;
+import com.embabel.agent.config.annotation.McpServers;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 
 @SpringBootApplication
-@EnableAgents(loggingTheme = LoggingThemes.STAR_WARS)
+@EnableAgents(loggingTheme = LoggingThemes.STAR_WARS, mcpServers = {McpServers.DOCKER})
 class ProjectNameApplication {
     public static void main(String[] args) {
         SpringApplication.run(ProjectNameApplication.class, args);
