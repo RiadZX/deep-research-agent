@@ -9,7 +9,7 @@ import com.embabel.agent.domain.library.HasContent;
 import com.embabel.agent.prompt.persona.RoleGoalBackstory;
 import com.embabel.common.ai.model.LlmOptions;
 import com.embabel.common.core.types.Timestamped;
-import org.checkerframework.checker.units.qual.A;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -26,6 +26,7 @@ abstract class PersonasResearch {
 }
 
 @Agent(description = "Perform deep web research on a topic and compile findings into a report.")
+@SuppressWarnings("unused")
 public class Researcher {
     Researcher(){
 
@@ -107,7 +108,34 @@ public class Researcher {
         Scanner scanner = new Scanner(System.in);
         String confirmation = scanner.nextLine();
         boolean confirmed = confirmation.equalsIgnoreCase("yes");
-        return new ResearchTask(researchTask.topic, researchTask.queries, confirmed);
+
+        if (confirmed) {
+            return new ResearchTask(researchTask.topic, researchTask.queries, true);
+        }
+
+        System.out.println("What would you like to change?");
+        String changes = scanner.nextLine();
+
+        return context.ai()
+                .withAutoLlm()
+                .withToolGroup(CoreToolGroups.WEB)
+                .withToolGroup(CoreToolGroups.BROWSER_AUTOMATION)
+                .withPromptContributor(PersonasResearch.RESEARCHER)
+                .createObject(String.format("""
+                        The user has requested changes to the following research task.
+                        
+                        Original Task:
+                        Topic: %s
+                        Queries:
+                        %s
+                        
+                        User's requested changes:
+                        %s
+                        
+                        Please generate a new research task that incorporates these changes.
+                        Set confirmed_by_user to `false`.
+                        DO NOT REPLY WITH ANYTHING OTHER THAN THE RESEARCH TASK OBJECT.
+                        """, researchTask.topic, String.join("\n", researchTask.queries), changes).trim(), ResearchTask.class);
     }
 
     @AchievesGoal(
@@ -131,7 +159,7 @@ public class Researcher {
                         Research Queries:
                         %s
                         
-                        Provide detailed findings for each query and synthesize them into a coherent report. 
+                        Provide detailed findings for each query and synthesize them into a coherent report.
                         Add the sources as links at the end of the report.
                         """, researchTask.topic, String.join("\n", researchTask.queries)).trim());
         return new ResearchReport(researchTask.topic, findings);
