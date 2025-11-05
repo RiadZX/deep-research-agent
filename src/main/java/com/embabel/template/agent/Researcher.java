@@ -2,17 +2,21 @@ package com.embabel.template.agent;
 
 import com.embabel.agent.api.annotation.*;
 import com.embabel.agent.api.common.OperationContext;
+import com.embabel.agent.api.models.OpenAiModels;
 import com.embabel.agent.core.CoreToolGroups;
 import com.embabel.agent.domain.io.UserInput;
 import com.embabel.agent.domain.library.HasContent;
 import com.embabel.agent.prompt.persona.RoleGoalBackstory;
+import com.embabel.common.ai.model.LlmOptions;
 import com.embabel.common.core.types.Timestamped;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Scanner;
 
 abstract class PersonasResearch {
     static final RoleGoalBackstory RESEARCHER = RoleGoalBackstory
@@ -50,7 +54,6 @@ public class Researcher {
     }
 
     @Action(
-            post = {TASK_CONFIRMED},
             canRerun = true
     )
     ResearchTask craftResearchTask(UserInput userInput, OperationContext context) {
@@ -67,7 +70,7 @@ public class Researcher {
                         
                         Research Topic: "Eiffel Tower's History and Evolution"
                         Research Queries:
-                        1) Investigate the foundational purpose and date of the Eiffel Tower's construction, focusing on its role as the entrance arch for the 1889 Exposition Universelle in Paris.
+                        (1) Investigate the foundational purpose and date of the Eiffel Tower's construction, focusing on its role as the entrance arch for the 1889 Exposition Universelle in Paris.
                         (2) Research the design process, the primary architects and engineers involved (notably Gustave Eiffel), and the technological challenges faced during the construction phase.
                         (3) Explore the immediate public and artistic reception of the tower, including the initial controversies, petitions, and the contractual understanding that it was meant to be temporary.
                         (4) Analyze the tower's earliest functions in the late 19th and early 20th centuries, specifically its scientific uses for meteorology, aerodynamics, and early experiments in telegraphy and radio broadcasting.
@@ -81,18 +84,44 @@ public class Researcher {
                         
                         -----
                         
-                        Make sure to ask the user for confirmation. If the user confirmed it, set confirmed_by_user to true, otherwise false.
+                        set confirmed_by_user to `false`.
+                        DO NOT REPLY WITH ANYTHING OTHER THAN THE RESEARCH TASK OBJECT.
                         """, userInput.getContent()).trim(), ResearchTask.class);
+    }
+
+    @Action(
+            canRerun = true,
+            description = "Confirm the research task with the user.",
+            post = {TASK_CONFIRMED}
+    )
+    ResearchTask confirmTask(ResearchTask researchTask, OperationContext context) {
+        // Confirm with the user
+        // print the research task details and ask for confirmation
+        System.out.println("Research Topic: " + researchTask.topic);
+        System.out.println("Research Queries:");
+        for (String query : researchTask.queries) {
+            System.out.println("- " + query);
+        }
+        System.out.println("Do you confirm this research task? (yes/no)");
+        // use scanner to get user input
+        Scanner scanner = new Scanner(System.in);
+        String confirmation = scanner.nextLine();
+        boolean confirmed = confirmation.equalsIgnoreCase("yes");
+        return new ResearchTask(researchTask.topic, researchTask.queries, confirmed);
     }
 
     @AchievesGoal(
             description = "A comprehensive research report has been compiled on the specified topic.",
             export = @Export(remote = true, name = "researchReport")
     )
-    @Action
+    @Action(
+            pre = {TASK_CONFIRMED}
+    )
     ResearchReport compileResearchReport(ResearchTask researchTask, OperationContext context) {
         var findings = context.ai()
-                .withAutoLlm()
+                .withLlm(LlmOptions
+                        .withModel(OpenAiModels.GPT_41)
+                        .withTemperature(0.3))
                 .withToolGroup(CoreToolGroups.WEB)
                 .withToolGroup(CoreToolGroups.BROWSER_AUTOMATION)
                 .withPromptContributor(PersonasResearch.RESEARCHER)
