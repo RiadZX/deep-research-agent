@@ -41,7 +41,4 @@ When the Embabel shell comes up, invoke the research agent like this:
 x "Perform deep research on the impact of climate change on global agriculture and provide a comprehensive report."
 ```
 
-Example output:
-
-```
 
