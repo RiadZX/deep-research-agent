@@ -1,36 +1,30 @@
-<img align="left" src="https://github.com/embabel/embabel-agent/blob/main/embabel-agent-api/images/315px-Meister_der_Weltenchronik_001.jpg?raw=true" width="180">
+# Deep Research Agent
 
-![Build](https://github.com/embabel/java-agent-template/actions/workflows/maven.yml/badge.svg)
+This is a simple implementation of a deep web research agent using Embabel and Spring Shell.
+Here is a diagram of how the agent works:
 
-![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring](https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white)
-![Apache Tomcat](https://img.shields.io/badge/apache%20tomcat-%23F8DC75.svg?style=for-the-badge&logo=apache-tomcat&logoColor=black)
-![Apache Maven](https://img.shields.io/badge/Apache%20Maven-C71A36?style=for-the-badge&logo=Apache%20Maven&logoColor=white)
-![ChatGPT](https://img.shields.io/badge/chatGPT-74aa9c?style=for-the-badge&logo=openai&logoColor=white)
-![JSON](https://img.shields.io/badge/JSON-000?logo=json&logoColor=fff)
-![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
-![IntelliJ IDEA](https://img.shields.io/badge/IntelliJIDEA-000000.svg?style=for-the-badge&logo=intellij-idea&logoColor=white)
+![image](./images/AgentOverview.png)
 
-&nbsp;&nbsp;&nbsp;&nbsp;
+Embabel is a unique framework in the way workflows are constructed in comparison with other frameworks.
 
-&nbsp;&nbsp;&nbsp;&nbsp;
+The researcher agent has the following methods:
+- `craftResearchTask` : creates an initial set of tasks, to be confirmed by the user later.
+  - Preconditions: `UserInput` must exist (aka. this is the initial method that gets called)
+  - Postcondition: `ResearchTask` is created (to be used by subsequent methods)
+- `confirmTask` : refines the tasks based on user feedback, until user is satisfied.
+  - Preconditions: `ResearchTask` must exist
+  - Postcondition: `confirmed_by_user` must be true. (meaning the agent will repeatedly call this method until user is satisfied)
+- `compileResearchProject` : compiles the research project into a final report (markdown syntax)
+  - Preconditions: `ResearchTask` must exist *and* `confirmed_by_user` is true
+  - Postcondition: `ResearchReport` is created *and* `exported` to the user (logged to the shell and the goal is achieved.)
+  - Temperature: set to a lower value to reduce randomness.
 
-# Generated Agent Project
+The framework, automatically figures out the dependencies between these methods based on their preconditions and postconditions,
+and constructs a workflow to achieve the final goal of producing a research report.
 
-Starting point for your own agent development using the [Embabel framework](https://github.com/embabel/embabel-agent).
-
-Add your magic here!
-
-Illustrates:
-
-- An injected demo showing how any Spring component can be injected with an Embabel `Ai` instance to enable it to
-  perform LLM operations.
-- A simple agent
-- Unit tests for an agent verifying prompts and hyperparameters
-
-> For the Kotlin equivalent, see
-> our [Kotlin agent template](https://github.com/embabel/kotlin-agent-template).
+LLMs used:
+- `gpt-4.1-mini`: used for crafting research tasks and refining them based on user feedback.
+- `gpt-4.1`: used for compiling the final research report.
 
 # Running
 
@@ -40,50 +34,14 @@ Run the shell script to start Embabel under Spring Shell:
 ./scripts/shell.sh
 ```
 
-There is a single example
-agent, [WriteAndReviewAgent](./src/main/java/com/embabel/template/agent/WriteAndReviewAgent.java).
-It uses one LLM with a high temperature and creative persona to write a story based on your input,
-then another LLM with a low temperature and different persona to review the story.
 
-When the Embabel shell comes up, invoke the story agent like this:
+When the Embabel shell comes up, invoke the research agent like this:
 
 ```
-x "Tell me a story about...[your topic]"
+x "Perform deep research on the impact of climate change on global agriculture and provide a comprehensive report."
 ```
 
-Try the following other shell commands:
+Example output:
 
-- `demo`: Runs the same agent, invoked programmatically, instead of dynamically based on user input.
-  See [DemoCommands.java](./src/main/java/com/embabel/template/DemoShell.java) for the
-  implementation.
-- `animal`:  Runs a simple demo using an Embabel injected `Ai` instance to call an LLM.
-  See [InjectedDemo](./src/main/java/com/embabel/template/injected/InjectedDemo.java).
-
-## Suggested Next Steps
-
-To get a feel for working with Embabel, try the following:
-
-- Modify the prompts in `WriteAndReviewAgent` and `InjectedDemo`.
-- Experiment with different models and hyperparameters by modifying `withLlm` calls.
-- Integrate your own services, injecting them with Spring. All Embabel `@Agent` classes are Spring beans.
-- Run the tests with `mvn test` and modify them to experiment with prompt verification.
-
-To see tool support, check out the more
-complex [Embabel Agent API Examples](https://github.com/embabel/embabel-agent-examples) repository.
-
-## Model support
-
-Embabel integrates with any LLM supported by Spring AI.
-
-See [LLM integration guide](docs/llm-docs.md) (work in progress).
-
-Also see [Spring AI models](https://docs.spring.io/spring-ai/reference/api/index.html).
-
-## A2A support
-
-Embabel integrates with Google A2a. See [A2A integration](docs/a2a.md).
-
-## Contributors
-
-[![Embabel contributors](https://contrib.rocks/image?repo=embabel/java-agent-template)](https://github.com/embabel/java-agent-template/graphs/contributors)
+```
 

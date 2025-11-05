@@ -1,0 +1,40 @@
+@startuml
+top to bottom direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+' Reduce font size to make components narrower
+skinparam defaultFontSize 10
+
+' Color definitions: green = no tools (green), red = uses tools (red)
+skinparam component<<no-tools>> {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontColor #1B5E20
+}
+skinparam component<<uses-tools>> {
+  BackgroundColor #FFEBEE
+  BorderColor #C62828
+  FontColor #B71C1C
+}
+
+actor User
+
+component "Researcher (Agent)" as Agent {
+  [craftResearchTask()] as craft <<uses-tools>>
+  [confirmTask()] as confirm <<uses-tools>>
+  [compileResearchReport()] as compile <<uses-tools>>
+
+
+component "ResearchTask\n(topic, queries, confirmed_by_user)" as ResearchTask <<no-tools>>
+component "ResearchReport\n(topic, findings)\n(exported as `researchReport`)" as ResearchReport <<no-tools>>
+
+User --> craft : provide `UserInput`
+craft --> ResearchTask : produces research task\n(confirmed_by_user = false)
+
+ResearchTask --> confirm : presented to user
+confirm --> ResearchTask : update (confirmed_by_user = true/false)
+
+ResearchTask --> compile : requires confirmed_by_user = true
+compile --> ResearchReport : produces report
+@enduml
