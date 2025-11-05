@@ -1,8 +1,6 @@
 package com.embabel.template.agent;
 
-import com.embabel.agent.api.annotation.Action;
-import com.embabel.agent.api.annotation.Agent;
-import com.embabel.agent.api.annotation.Condition;
+import com.embabel.agent.api.annotation.*;
 import com.embabel.agent.api.common.OperationContext;
 import com.embabel.agent.core.CoreToolGroups;
 import com.embabel.agent.domain.io.UserInput;
@@ -16,7 +14,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-abstract class Personas {
+abstract class PersonasResearch {
     static final RoleGoalBackstory RESEARCHER = RoleGoalBackstory
             .withRole("Deep Web Researcher")
             .andGoal("Perform thorough research on any topic")
@@ -28,6 +26,10 @@ public class Researcher {
     Researcher(){
 
     }
+
+    public static final String TASK_CONFIRMED = "task_confirmed";
+    public static final String TASK_NOT_CONFIRMED = "task_not_confirmed";
+
 
     public record ResearchTask(String topic, List<String> queries, boolean confirmed_by_user) {}
 
@@ -48,7 +50,7 @@ public class Researcher {
     }
 
     @Action(
-            pre = {},
+            post = {TASK_CONFIRMED},
             canRerun = true
     )
     ResearchTask craftResearchTask(UserInput userInput, OperationContext context) {
@@ -56,7 +58,7 @@ public class Researcher {
                 .withAutoLlm()
                 .withToolGroup(CoreToolGroups.WEB)
                 .withToolGroup(CoreToolGroups.BROWSER_AUTOMATION)
-                .withPromptContributor(Personas.RESEARCHER)
+                .withPromptContributor(PersonasResearch.RESEARCHER)
                 .createObject(String.format("""
                         Create detailed research tasks based on the user input.Come up with a clear research topic and a list of specific queries to be answered.
                         
@@ -83,14 +85,38 @@ public class Researcher {
                         """, userInput.getContent()).trim(), ResearchTask.class);
     }
 
+    @AchievesGoal(
+            description = "A comprehensive research report has been compiled on the specified topic.",
+            export = @Export(remote = true, name = "researchReport")
+    )
+    @Action
+    ResearchReport compileResearchReport(ResearchTask researchTask, OperationContext context) {
+        var findings = context.ai()
+                .withAutoLlm()
+                .withToolGroup(CoreToolGroups.WEB)
+                .withToolGroup(CoreToolGroups.BROWSER_AUTOMATION)
+                .withPromptContributor(PersonasResearch.RESEARCHER)
+                .generateText(String.format("""
+                        Using the following research queries, gather information from reliable web sources and compile a comprehensive research report on the topic: %s.
+                        
+                        Research Queries:
+                        %s
+                        
+                        Provide detailed findings for each query and synthesize them into a coherent report. 
+                        Add the sources as links at the end of the report.
+                        """, researchTask.topic, String.join("\n", researchTask.queries)).trim());
+        return new ResearchReport(researchTask.topic, findings);
+    }
 
+    @Condition(name = TASK_CONFIRMED)
+    public boolean isTaskConfirmed(ResearchTask researchTask) {
+        return researchTask.confirmed_by_user;
+    }
 
-
-
-
-
-
-
+    @Condition(name = TASK_NOT_CONFIRMED)
+    public boolean isTaskNotConfirmed(ResearchTask researchTask) {
+        return !researchTask.confirmed_by_user;
+    }
 
 }
 
